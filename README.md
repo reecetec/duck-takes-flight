@@ -2,6 +2,8 @@
 
 A high-performance data streaming system using DuckDB and Apache Arrow Flight.
 
+Ok, now [do it in Rust](https://github.com/definite-app/duck-takes-flight-in-a-rust-bucket)
+
 ## Components
 
 1. **DuckDB Flight Server** (`duckdb_flight_server.py`): A server that exposes DuckDB through Arrow Flight protocol
