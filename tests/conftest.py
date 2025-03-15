@@ -8,7 +8,6 @@ import tempfile
 import threading
 import time
 
-import duckdb
 import pyarrow as pa
 import pytest
 
@@ -57,7 +56,7 @@ def flight_server(temp_db_path):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if s.connect_ex((host, port)) == 0:
                     break
-        except:
+        except Exception:
             pass
 
         # If we've tried the maximum number of times, fail
