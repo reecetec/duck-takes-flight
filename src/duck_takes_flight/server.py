@@ -110,13 +110,6 @@ class DuckDBFlightServer(flight.FlightServerBase):
             print(f"Executing action query: {query}")
             self.conn.execute(query)
             return []
-        elif action.type == "list_tables":
-            print("Listing tables")
-            result = self.conn.execute(
-                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'"
-            ).fetchall()
-            tables = [table[0] for table in result]
-            return [flight.Result(table.encode()) for table in tables]
         else:
             raise NotImplementedError(f"Unknown action type: {action.type}")
 

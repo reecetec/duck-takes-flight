@@ -71,21 +71,21 @@ class DuckDBFlightClient:
             print(f"Query error: {str(e)}")
             return None
 
-    def upload_data(self, table_name, data):
+    def upload_data(self, table_name, table):
         """
         Upload data to the Flight server.
 
         Args:
             table_name: The name of the table to upload to.
-            data: A PyArrow Table containing the data to upload.
+            table: A PyArrow Table containing the data to upload.
 
         Returns:
             True if the upload was successful, False otherwise.
         """
         try:
             descriptor = flight.FlightDescriptor.for_path(table_name)
-            writer, _ = self.client.do_put(descriptor, data.schema)
-            writer.write_table(data)
+            writer, _ = self.client.do_put(descriptor, table.schema)
+            writer.write_table(table)
             writer.close()
             return True
         except Exception as e:
@@ -109,27 +109,3 @@ class DuckDBFlightClient:
         except Exception as e:
             print(f"Action error: {str(e)}")
             return []
-
-    def list_tables(self):
-        """
-        List all tables in the database.
-
-        Returns:
-            A list of table names.
-        """
-        results = self.execute_action("list_tables")
-        return [result.body.to_pybytes().decode() for result in results]
-
-    def create_table(self, table_name, schema_sql):
-        """
-        Create a table in the database.
-
-        Args:
-            table_name: The name of the table to create.
-            schema_sql: The SQL schema for the table.
-
-        Returns:
-            True if the table was created successfully, False otherwise.
-        """
-        query = f"CREATE TABLE IF NOT EXISTS {table_name} ({schema_sql})"
-        return self.execute_action("query", query) is not None
