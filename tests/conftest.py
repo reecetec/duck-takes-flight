@@ -3,18 +3,17 @@ Common test fixtures for duck-takes-flight tests.
 """
 
 import os
-import random
 import socket
 import tempfile
+import threading
 import time
-from contextlib import contextmanager
-from multiprocessing import Process
 
+import duckdb
 import pyarrow as pa
 import pytest
 
 from duck_takes_flight.client import DuckDBFlightClient
-from duck_takes_flight.server import serve
+from duck_takes_flight.server import DuckDBFlightServer
 
 
 def find_free_port():
@@ -35,13 +34,20 @@ def temp_db_path():
 
 @pytest.fixture
 def flight_server(temp_db_path):
-    """Fixture to start a Flight server for testing."""
+    """Fixture to start a Flight server for testing.
+
+    This uses threading instead of multiprocessing to avoid segmentation faults in CI.
+    """
     host = "localhost"
     port = find_free_port()  # Use a random free port to avoid conflicts
+    location = f"grpc://{host}:{port}"
 
-    # Start server in a separate process
-    server_process = Process(target=serve, args=(temp_db_path, host, port), daemon=True)
-    server_process.start()
+    # Create the server
+    server = DuckDBFlightServer(location=location, db_path=temp_db_path)
+
+    # Start server in a separate thread
+    server_thread = threading.Thread(target=server.serve, daemon=True)
+    server_thread.start()
 
     # Wait for server to start
     max_attempts = 5
@@ -49,27 +55,20 @@ def flight_server(temp_db_path):
         try:
             # Try to connect to the server
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                if s.connect_ex(("localhost", port)) == 0:
+                if s.connect_ex((host, port)) == 0:
                     break
         except:
             pass
 
         # If we've tried the maximum number of times, fail
         if attempt == max_attempts - 1:
-            server_process.terminate()
             pytest.fail(f"Could not connect to server after {max_attempts} attempts")
 
         time.sleep(1)
 
-    yield {"host": host, "port": port, "db_path": temp_db_path}
+    yield {"host": host, "port": port, "db_path": temp_db_path, "server": server}
 
-    # Cleanup
-    server_process.terminate()
-    server_process.join(timeout=1)
-
-    # Force kill if still alive
-    if server_process.is_alive():
-        server_process.kill()
+    # No need to explicitly clean up the thread as it's a daemon thread
 
 
 @pytest.fixture
