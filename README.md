@@ -20,6 +20,9 @@ duck-flight
 
 # Start with custom settings
 duck-flight --host 0.0.0.0 --port 9000 --db-path my_database.db
+
+# Start with logging configuration
+duck-flight --log-level DEBUG --log-file server.log
 ```
 
 #### CLI Arguments
@@ -29,6 +32,8 @@ duck-flight --host 0.0.0.0 --port 9000 --db-path my_database.db
 | `--host` | Host to bind the server to | `localhost` |
 | `--port` | Port to bind the server to | `8815` |
 | `--db-path` | Path to the DuckDB database file | `duck_flight.db` |
+| `--log-level` | Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO` |
+| `--log-file` | Path to log file (if not specified, logs to console only) | None |
 
 ### Using the Client
 
@@ -60,13 +65,14 @@ client.execute_action("query", "CREATE TABLE IF NOT EXISTS new_table (id INT, na
 
 ### Client API
 
-#### `DuckDBFlightClient(host="localhost", port=8815, max_attempts=5)`
+#### `DuckDBFlightClient(host="localhost", port=8815, max_attempts=5, logger=None)`
 
 Creates a new client connection to the server.
 
 - `host`: The hostname of the server
 - `port`: The port of the server
 - `max_attempts`: Number of connection attempts before failing
+- `logger`: Optional custom logger instance
 
 #### `execute_query(query)`
 
@@ -81,6 +87,28 @@ Uploads a PyArrow Table to the server with the given table name.
 Executes a custom action on the server.
 - `action_type`: The type of action (e.g., "query")
 - `body`: The body of the action (e.g., a SQL statement)
+
+### Logging
+
+Duck Takes Flight includes a configurable logging system:
+
+```python
+from duck_takes_flight.logging import configure_logging
+
+# Configure logging
+logger = configure_logging(
+    level="DEBUG",                # Logging level
+    log_file="client.log",        # Optional log file
+    component="my-client"         # Component name
+)
+
+# Create client with custom logger
+client = DuckDBFlightClient(
+    host="localhost", 
+    port=8815,
+    logger=logger
+)
+```
 
 ## Examples
 
@@ -141,3 +169,12 @@ print(aggregated)
 - Aligned Arrow buffers for optimal performance
 - Automatic schema inference
 - Retry logic for robust connections
+- Configurable logging system
+
+## Development
+
+For information on development, testing, and contributing to the project, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT

@@ -195,7 +195,9 @@ def test_serve(mock_server_class):
     serve(db_path="test.db", host="testhost", port=9000)
 
     # Verify server was created and started
+    # Check that it was called with the correct location and db_path
+    # and that logger was passed as None
     mock_server_class.assert_called_once_with(
-        location="grpc://testhost:9000", db_path="test.db"
+        location="grpc://testhost:9000", db_path="test.db", logger=None
     )
     mock_server.serve.assert_called_once()
