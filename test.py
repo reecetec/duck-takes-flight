@@ -1,8 +1,8 @@
-import pyarrow as pa
-import pyarrow.flight as flight
-import random
 import time
+
+import pyarrow.flight as flight
 from pyarrow._flight import FlightUnavailableError
+
 
 # Connect to the Arrow Flight server
 def connect_with_retry(max_attempts=5):
@@ -12,10 +12,13 @@ def connect_with_retry(max_attempts=5):
             return client
         except FlightUnavailableError:
             if attempt < max_attempts - 1:
-                print(f"Connection attempt {attempt + 1} failed, retrying in 1 second...")
+                print(
+                    f"Connection attempt {attempt + 1} failed, retrying in 1 second..."
+                )
                 time.sleep(1)
             else:
                 raise
+
 
 def query_data():
     query = "SELECT count(1) FROM concurrent_test"
@@ -26,6 +29,7 @@ def query_data():
     result_table = reader.read_all()
     print("Query Result:")
     print(result_table)
+
 
 if __name__ == "__main__":
     print("Connecting to server...")
