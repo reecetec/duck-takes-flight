@@ -34,4 +34,4 @@ jobs:
     
     - name: Integration tests
       run: |
-        pytest tests/integration --cov=duck_takes_flight --cov-append
+        pytest tests/integration
