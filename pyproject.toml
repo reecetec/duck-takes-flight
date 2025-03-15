@@ -1,10 +1,21 @@
 [project]
 name = "duck-takes-flight"
-version = "0.1.0"
-description = "Add your description here"
+dynamic = ["version"]
+description = "A high-performance data streaming system using DuckDB and Apache Arrow Flight"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.2.1",
     "pyarrow>=19.0.1",
 ]
+
+[project.scripts]
+duck-flight = "duck_takes_flight.cli:main"
+
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+

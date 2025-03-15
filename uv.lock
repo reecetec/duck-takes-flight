@@ -3,8 +3,8 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "duck-takes-flight"
-version = "0.1.0"
-source = { virtual = "." }
+version = "0.1.dev3+g85ba5d9.d20250315"
+source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "pyarrow" },
