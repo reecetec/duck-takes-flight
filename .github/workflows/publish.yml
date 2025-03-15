@@ -22,7 +22,7 @@ jobs:
        
     - name: Install dependencies
       run: |
-        pip install twine
+        pip install build twine
      
     - name: Build package
       run: |
