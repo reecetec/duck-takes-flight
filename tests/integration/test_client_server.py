@@ -115,3 +115,66 @@ class TestClientServerIntegration:
 
         # The client should handle the error and return None
         assert result is None
+
+    def test_execute_query_to_polars(self, flight_client, sample_table):
+        """Test querying with conversion to Polars DataFrame."""
+        # Upload data
+        table_name = "test_polars"
+        success = flight_client.upload_data(table_name, sample_table)
+        assert success is True
+
+        # Query the data with conversion to Polars
+        query = f"SELECT * FROM {table_name}"
+        result_df = flight_client.execute_query_to_polars(query)
+
+        # Verify the result
+        assert result_df is not None
+        assert len(result_df) == sample_table.num_rows
+        # Check that column names match
+        for col_name in sample_table.column_names:
+            assert col_name in result_df.columns
+
+    def test_execute_query_to_polars_with_filter(self, flight_client, sample_table):
+        """Test querying with filter and conversion to Polars DataFrame."""
+        # Upload data
+        table_name = "test_polars_filter"
+        success = flight_client.upload_data(table_name, sample_table)
+        assert success is True
+
+        # Query with filter and conversion to Polars
+        query = f"SELECT * FROM {table_name} WHERE value > 30"
+        result_df = flight_client.execute_query_to_polars(query)
+
+        # Verify the result
+        assert result_df is not None
+        assert len(result_df) > 0
+        assert len(result_df) < sample_table.num_rows
+
+    def test_execute_query_to_polars_with_aggregation(
+        self, flight_client, sample_table
+    ):
+        """Test querying with aggregation and conversion to Polars DataFrame."""
+        # Upload data
+        table_name = "test_polars_aggregation"
+        success = flight_client.upload_data(table_name, sample_table)
+        assert success is True
+
+        # Query with aggregation and conversion to Polars
+        query = f"SELECT AVG(value) as avg_value FROM {table_name}"
+        result_df = flight_client.execute_query_to_polars(query)
+
+        # Verify the result
+        assert result_df is not None
+        assert len(result_df) == 1
+        assert "avg_value" in result_df.columns
+
+    def test_execute_query_to_polars_error_handling(self, flight_client):
+        """Test error handling for invalid queries with Polars conversion."""
+        # Execute an invalid query with Polars conversion
+        result_df = flight_client.execute_query_to_polars(
+            "SELECT * FROM nonexistent_table"
+        )
+
+        # The client should handle the error and return an empty DataFrame
+        assert result_df is not None
+        assert len(result_df) == 0

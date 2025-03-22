@@ -202,3 +202,61 @@ class TestDuckDBFlightClient:
 
         # Verify error handling
         assert results == []
+
+    def test_execute_query_to_polars(self, mock_flight_client):
+        """Test query execution with conversion to Polars DataFrame."""
+        # Setup mock response
+        mock_reader = MagicMock()
+        mock_result = pa.Table.from_pydict({"col1": [1, 2, 3]})
+        mock_reader.read_all.return_value = mock_result
+        mock_flight_client.do_get.return_value = mock_reader
+
+        with patch("polars.from_arrow") as mock_from_arrow:
+            # Setup mock polars conversion
+            mock_df = MagicMock()
+            mock_df.__len__.return_value = 3
+            mock_from_arrow.return_value = mock_df
+
+            client = DuckDBFlightClient()
+            result = client.execute_query_to_polars("SELECT * FROM test")
+
+            # Verify the query was executed correctly
+            mock_flight_client.do_get.assert_called_once()
+            ticket_arg = mock_flight_client.do_get.call_args[0][0]
+            assert ticket_arg.ticket == b"SELECT * FROM test"
+
+            # Verify the arrow table was converted to polars
+            mock_from_arrow.assert_called_once_with(mock_result)
+            assert result == mock_df
+
+    def test_execute_query_to_polars_none_result(self, mock_flight_client):
+        """Test query execution with None result from execute_query."""
+        # Setup mock to return None from execute_query
+        with patch.object(DuckDBFlightClient, "execute_query", return_value=None):
+            with patch("polars.DataFrame") as mock_df_constructor:
+                mock_empty_df = MagicMock()
+                mock_df_constructor.return_value = mock_empty_df
+
+                client = DuckDBFlightClient()
+                result = client.execute_query_to_polars("SELECT * FROM test")
+
+                # Verify error handling - empty DataFrame should be created
+                mock_df_constructor.assert_called_once()
+                assert result == mock_empty_df
+
+    def test_execute_query_to_polars_error(self, mock_flight_client):
+        """Test query execution to polars with error."""
+        # Setup mock to raise exception
+        with patch.object(DuckDBFlightClient, "execute_query") as mock_execute_query:
+            mock_execute_query.side_effect = Exception("Query error")
+
+            with patch("polars.DataFrame") as mock_df_constructor:
+                mock_empty_df = MagicMock()
+                mock_df_constructor.return_value = mock_empty_df
+
+                client = DuckDBFlightClient()
+                result = client.execute_query_to_polars("SELECT * FROM test")
+
+                # Verify error handling - empty DataFrame should be created
+                mock_df_constructor.assert_called_once()
+                assert result == mock_empty_df
