@@ -75,15 +75,28 @@ class DuckDBFlightClient:
             query: The SQL query to execute.
 
         Returns:
-            A PyArrow Table containing the query results.
+            A PyArrow Table containing the query results, or an empty table
+            if the query returns no rows.
         """
         try:
             self.logger.debug(f"Executing query: {query}")
             ticket = flight.Ticket(query.encode("utf-8"))
             reader = self.client.do_get(ticket)
-            result = reader.read_all()
-            self.logger.debug(f"Query returned {result.num_rows} rows")
-            return result
+            try:
+                result = reader.read_all()
+                self.logger.debug(f"Query returned {result.num_rows} rows")
+                return result
+            except ValueError as ve:
+                if "Must pass schema, or at least one RecordBatch" in str(ve):
+                    self.logger.debug("Query returned no rows, creating empty table")
+                    # Create an empty table with appropriate schema if possible
+                    # If we can't determine the schema, return an empty table with no columns
+                    import pyarrow as pa
+
+                    return pa.Table.from_arrays([], [])
+                else:
+                    # Re-raise if it's a different ValueError
+                    raise
         except Exception as e:
             self.logger.error(f"Query error: {str(e)}")
             return None
