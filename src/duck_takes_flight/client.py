@@ -6,6 +6,7 @@ import logging
 import time
 from typing import Optional
 
+import polars as pl
 import pyarrow.flight as flight
 from pyarrow._flight import FlightUnavailableError
 
@@ -100,6 +101,38 @@ class DuckDBFlightClient:
         except Exception as e:
             self.logger.error(f"Query error: {str(e)}")
             return None
+
+    def execute_query_to_polars(self, query):
+        """
+        Execute a query on the Flight server and return the result as a Polars DataFrame.
+
+        Args:
+            query: The SQL query to execute.
+
+        Returns:
+            A Polars DataFrame containing the query results, or an empty DataFrame
+            if the query returns no rows or an error occurs.
+        """
+        try:
+            self.logger.debug(f"Executing query for Polars conversion: {query}")
+            arrow_table = self.execute_query(query)
+
+            if arrow_table is None:
+                self.logger.warning(
+                    "Query returned None, returning empty Polars DataFrame"
+                )
+
+                return pl.DataFrame()
+
+            df = pl.from_arrow(arrow_table)
+            self.logger.debug(
+                f"Converted PyArrow table to Polars DataFrame with {len(df)} rows"
+            )
+            return df
+
+        except Exception as e:
+            self.logger.error(f"Error converting to Polars DataFrame: {str(e)}")
+            return pl.DataFrame()
 
     def upload_data(self, table_name, table):
         """
